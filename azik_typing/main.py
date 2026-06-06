@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .azik_table import get_variants, reading_to_strokes
+from .azik_table import get_variants, reading_to_strokes, set_long_vowel
 
 
 @dataclass
@@ -226,7 +226,15 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Path to sentences text file (one sentence per line)",
     )
+    parser.add_argument(
+        "--jis",
+        action="store_true",
+        help="JIS配列モード: 長音符号を ' の代わりに : にする",
+    )
     args = parser.parse_args(argv)
+
+    if args.jis:
+        set_long_vowel(":")
 
     sentences_path = args.sentences or find_default_sentences()
     sentences = load_sentences(sentences_path)

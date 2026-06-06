@@ -164,7 +164,9 @@ KANA_TO_AZIK: dict[str, str] = {
     "がら": "gr", "ごと": "gt", "にち": "nt", "だち": "dt", "われ": "wr",
 
     # ===== 長音・句読点 =====
-    "ー": "-",
+    # デフォルト: US配列では ' (アポストロフィ)
+    # JIS配列では : (--jis オプション時に set_long_vowel(':') で変更)
+    "ー": "'",
     "。": ".", "、": ",", "「": "[", "」": "]", "・": "/",
 }
 
@@ -181,6 +183,15 @@ def build_trie(table: dict[str, str]) -> dict:
 
 
 AZIK_TRIE = build_trie(KANA_TO_AZIK)
+
+
+def set_long_vowel(char: str) -> None:
+    """長音符号のストロークを変更してトライを再構築する。
+    US配列デフォルト: '  / JIS配列: :
+    """
+    global AZIK_TRIE
+    KANA_TO_AZIK["ー"] = char
+    AZIK_TRIE = build_trie(KANA_TO_AZIK)
 
 
 def kana_to_azik(text: str) -> str:
