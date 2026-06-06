@@ -5,8 +5,6 @@
 ## インストール
 
 ```bash
-pip install azik-typing
-# または開発版
 pip install -e /path/to/azik-typing
 ```
 
