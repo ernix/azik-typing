@@ -279,8 +279,12 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
             continue
         segs = kana_to_azik_segmented(text)
         for k, (kana, stroke) in enumerate(segs):
-            if needs_shift and k == 0 and stroke and stroke[0].isalpha():
-                stroke = stroke[0].upper() + stroke[1:]
+            if needs_shift and k == 0:
+                if stroke and stroke[0].isalpha():
+                    stroke = stroke[0].upper() + stroke[1:]
+                elif stroke == ";":
+                    # っ が送り仮名変換トリガーの場合: Shift+; = : (US配列)
+                    stroke = ":"
             result.append((kana, stroke, needs_shift))
         if triggers_next:
             result.append(("", " ", False))   # SKK変換確定スペース
