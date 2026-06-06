@@ -35,9 +35,12 @@ KANA_TO_AZIK: dict[str, str] = {
     "みゃ": "mya", "みゅ": "myu", "みょ": "myo",
     "りゃ": "rya", "りゅ": "ryu", "りょ": "ryo",
     "ぎゃ": "gya", "ぎゅ": "gyu", "ぎょ": "gyo",
-    "じゃ": "zya", "じゅ": "zyu", "じょ": "zyo",
+    "じゃ": "ja",  "じゅ": "ju",  "じょ": "jo",   # j形が最短 (zy形より1打短い)
     "びゃ": "bya", "びゅ": "byu", "びょ": "byo",
     "ぴゃ": "pya", "ぴゅ": "pyu", "ぴょ": "pyo",
+
+    # ふぁ行 (fa/fi/fe/fo — 実際のAZIKテーブルより)
+    "ふぁ": "fa", "ふぃ": "fi", "ふぇ": "fe", "ふぉ": "fo",
 
     # ===== っ =====
     "っ": ";",
@@ -50,14 +53,23 @@ KANA_TO_AZIK: dict[str, str] = {
     # キーボード配置に基づく設計:
     #   各母音段のかな + 隣接キー → ん or 長音
     #
-    #   A段 (あかさたなはまらがざだばぱ) + z/n → +ん, + q → +い
-    #   I段 (いきしちにひみりぎじぢびぴ) + k → +ん
-    #   U段 (うくすつぬふむるぐずづぶぷ) + j → +ん, + h → +う(長音)
-    #   E段 (えけせてねへめれげぜでべぺ) + d → +ん, + w → +い(えい)
-    #   O段 (おこそとのほもろごぞどぼぽ) + l → +ん, + p → +う(おう)
+    #   ん suffix (段別キー — SKKの l キーはASCIIモード切替に使われるため O段のみ対象外):
+    #     A段 + z → +ん    例: kz=かん, az=あん
+    #     I段 + k → +ん    例: kk=きん
+    #     U段 + j → +ん    例: kj=くん
+    #     E段 + d → +ん    例: kd=けん, td=てん
+    #     O段      → q fallback (SKKでlはASCIIモード切替のため shortcut なし)
+    #                例: おん = o+ん = oq, こん = ko+ん = koq
+    #   長母音/二重母音 suffix (段別):
+    #     A段 + q → +あい    例: kq=かい
+    #     U段 + h → +うう    例: kh=くう
+    #     E段 + w → +えい    例: kw=けい
+    #     O段 + p → +おう    例: kp=こう
 
-    # A段 + ん (z suffix) / +い (q suffix)
-    "あん": "az", "あい": "aq",
+    # A段 + ん (z suffix)
+    # 母音単体 a に続く suffix は AquaSKK では機能しない (az, aj 等)。
+    # あん → a+ん = aq (q は母音後でも有効)
+    # あい → a+i = "ai" (標準ローマ字 fallback、2打で同じ)
     "かん": "kz", "かい": "kq",
     "さん": "sz", "さい": "sq",
     "たん": "tz", "たい": "tq",
@@ -74,14 +86,15 @@ KANA_TO_AZIK: dict[str, str] = {
     "わん": "wz", "わい": "wq",
 
     # I段 + ん (k suffix)
-    "いん": "ik",
+    # 「いん」は i(母音)+k → 機能しないため q fallback (iq)。
     "きん": "kk", "しん": "sk", "ちん": "tk",
     "にん": "nk", "ひん": "hk", "みん": "mk",
     "りん": "rk", "ぎん": "gk", "じん": "zk",
     "びん": "bk", "ぴん": "pk",
 
-    # U段 + ん (j suffix) / +う長音 (h suffix)
-    "うん": "uj", "うう": "uh",
+    # U段 + ん (j suffix) / +うう長音 (h suffix)
+    # 「うん」は u(母音)+j → 機能しないため q fallback (uq)。
+    # 「うう」は u(母音)+h → 機能しないため uu fallback。
     "くん": "kj", "くう": "kh",
     "すん": "sj", "すう": "sh",
     "つん": "tj", "つう": "th",
@@ -95,8 +108,9 @@ KANA_TO_AZIK: dict[str, str] = {
     "ぷん": "pj", "ぷう": "ph",
     "ゆん": "yj", "ゆう": "yh",
 
-    # E段 + ん (d suffix) / +い長音 (w suffix, えい sound)
-    "えん": "ed", "えい": "ew",
+    # E段 + ん (d suffix) / +えい長音 (w suffix)
+    # 「えん」は e(母音)+d → 機能しないため q fallback (eq)。
+    # 「えい」は e(母音)+w → 機能しないため ei fallback。
     "けん": "kd", "けい": "kw",
     "せん": "sd", "せい": "sw",
     "てん": "td", "てい": "tw",
@@ -110,8 +124,9 @@ KANA_TO_AZIK: dict[str, str] = {
     "べん": "bd", "べい": "bw",
     "ぺん": "pd", "ぺい": "pw",
 
-    # O段 + ん (l suffix) / +う長音 (p suffix, おう sound)
-    "おん": "ol", "おう": "op",
+    # O段 + おう長音 (p suffix) / ん (l suffix)
+    # 「おん」は o(母音)+l → 機能しないため q fallback (oq)。
+    # 「おう」は o(母音)+p → 機能しないため ou fallback。
     "こん": "kl", "こう": "kp",
     "そん": "sl", "そう": "sp",
     "とん": "tl", "とう": "tp",
@@ -127,41 +142,17 @@ KANA_TO_AZIK: dict[str, str] = {
     "よん": "yl", "よう": "yp",
 
     # 拗音 + suffix
-    # きょ段 (o-suffix: p=おう, l=おん) / きゅ段 (u-suffix: j=うん, h=うう)
-    # きゃ段 (a-suffix: z=あん, q=あい)
-    "きょう": "kyp", "きょん": "kyl",
-    "きゅん": "kyj", "きゅう": "kyh",
-    "きゃん": "kyz", "きゃい": "kyq",
-    "しょう": "syp", "しょん": "syl",
-    "しゅん": "syj", "しゅう": "syh",
-    "しゃん": "syz", "しゃい": "syq",
-    "ちょう": "typ", "ちょん": "tyl",
-    "ちゅん": "tyj", "ちゅう": "tyh",
-    "ちゃん": "tyz", "ちゃい": "tyq",
-    "にょう": "nyp", "にょん": "nyl",
-    "にゅん": "nyj", "にゅう": "nyh",
-    "にゃん": "nyz", "にゃい": "nyq",
-    "ひょう": "hyp", "ひょん": "hyl",
-    "ひゅん": "hyj", "ひゅう": "hyh",
-    "ひゃん": "hyz", "ひゃい": "hyq",
-    "みょう": "myp", "みょん": "myl",
-    "みゅん": "myj", "みゅう": "myh",
-    "みゃん": "myz", "みゃい": "myq",
-    "りょう": "ryp", "りょん": "ryl",
-    "りゅん": "ryj", "りゅう": "ryh",
-    "りゃん": "ryz", "りゃい": "ryq",
-    "ぎょう": "gyp", "ぎょん": "gyl",
-    "ぎゅん": "gyj", "ぎゅう": "gyh",
-    "ぎゃん": "gyz", "ぎゃい": "gyq",
-    "じょう": "zyp", "じょん": "zyl",
-    "じゅん": "zyj", "じゅう": "zyh",
-    "じゃん": "zyz", "じゃい": "zyq",
-    "びょう": "byp", "びょん": "byl",
-    "びゅん": "byj", "びゅう": "byh",
-    "びゃん": "byz", "びゃい": "byq",
-    "ぴょう": "pyp", "ぴょん": "pyl",
-    "ぴゅん": "pyj", "ぴゅう": "pyh",
-    "ぴゃん": "pyz", "ぴゃい": "pyq",
+    "きょう": "kyp", "きょん": "kyl", "きゅん": "kyj", "きゅう": "kyh", "きゃん": "kyz", "きゃい": "kyq",
+    "しょう": "syp", "しょん": "syl", "しゅん": "syj", "しゅう": "syh", "しゃん": "syz", "しゃい": "syq",
+    "ちょう": "typ", "ちょん": "tyl", "ちゅん": "tyj", "ちゅう": "tyh", "ちゃん": "tyz", "ちゃい": "tyq",
+    "にょう": "nyp", "にょん": "nyl", "にゅん": "nyj", "にゅう": "nyh", "にゃん": "nyz", "にゃい": "nyq",
+    "ひょう": "hyp", "ひょん": "hyl", "ひゅん": "hyj", "ひゅう": "hyh", "ひゃん": "hyz", "ひゃい": "hyq",
+    "みょう": "myp", "みょん": "myl", "みゅん": "myj", "みゅう": "myh", "みゃん": "myz", "みゃい": "myq",
+    "りょう": "ryp", "りょん": "ryl", "りゅん": "ryj", "りゅう": "ryh", "りゃん": "ryz", "りゃい": "ryq",
+    "ぎょう": "gyp", "ぎょん": "gyl", "ぎゅん": "gyj", "ぎゅう": "gyh", "ぎゃん": "gyz", "ぎゃい": "gyq",
+    "じょう": "jp",  "じょん": "jl",  "じゅん": "jj",  "じゅう": "jh",  "じゃん": "jz",  "じゃい": "jq",
+    "びょう": "byp", "びょん": "byl", "びゅん": "byj", "びゅう": "byh", "びゃん": "byz", "びゃい": "byq",
+    "ぴょう": "pyp", "ぴょん": "pyl", "ぴゅん": "pyj", "ぴゅう": "pyh", "ぴゃん": "pyz", "ぴゃい": "pyq",
 
     # ===== 子音連続ショートカット (実際のAZIKテーブルより) =====
     "こと": "kt", "した": "st", "たち": "tt", "ひと": "ht", "わた": "wt",
@@ -257,11 +248,50 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
                 blocks.append((chunk, False))
             i = len(reading) if j == -1 else j
 
-    result: list[tuple[str, str]] = []
+    # (kana, stroke, in_kanji_block) — in_kanji_block はShift許容の判定に使う
+    result: list[tuple[str, str, bool]] = []
     for text, needs_shift in blocks:
         segs = kana_to_azik_segmented(text)
         for k, (kana, stroke) in enumerate(segs):
             if needs_shift and k == 0 and stroke and stroke[0].isalpha():
                 stroke = stroke[0].upper() + stroke[1:]
-            result.append((kana, stroke))
+            result.append((kana, stroke, needs_shift))
     return result
+
+
+# ---------------------------------------------------------------------------
+# バリアント定義
+# 同じかなを異なるストロークで入力できる場合のマッピング。
+# キー: 正規ストローク (小文字), 値: 受け付ける代替ストロークのリスト
+# ---------------------------------------------------------------------------
+STROKE_VARIANTS: dict[str, list[str]] = {
+    # じ (zi/ji は同打鍵数)
+    "zi": ["ji"],
+    "zk": ["jk"],   # じん
+    # じゃ/じゅ/じょ: j形(2打)が最短、zy形・jy形(3打)が代替
+    "ja":  ["zya", "jya"],  # じゃ
+    "ju":  ["zyu", "jyu"],  # じゅ
+    "jo":  ["zyo", "jyo"],  # じょ
+    "jp":  ["zyp", "jyp"],  # じょう
+    "jl":  ["zyl", "jyl"],  # じょん
+    "jj":  ["zyj", "jyj"],  # じゅん
+    "jh":  ["zyh", "jyh"],  # じゅう
+    "jz":  ["zyz", "jyz"],  # じゃん
+    "jq":  ["zyq", "jyq"],  # じゃい
+    # ふ行: hu形(SKK標準)と fu形 はどちらも有効
+    "hu":  ["fu"],   # ふ
+    "hj":  ["fj"],   # ふん
+    "hh":  ["fh"],   # ふう
+}
+
+
+def get_variants(stroke: str) -> list[str]:
+    """正規ストロークに対応する代替ストロークの一覧を返す。
+
+    SKK大文字（漢字変換開始）に対応するため、先頭が大文字の場合は
+    小文字で検索して結果を同じ大文字化パターンで返す。
+    """
+    if stroke and stroke[0].isupper():
+        lower_variants = STROKE_VARIANTS.get(stroke[0].lower() + stroke[1:], [])
+        return [v[0].upper() + v[1:] for v in lower_variants]
+    return STROKE_VARIANTS.get(stroke, [])
