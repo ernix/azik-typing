@@ -228,30 +228,34 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
     # _KATA: カタカナ変換トリガー '[' を追加するための sentinel
     _KATA = "\x00["
 
-    blocks: list[tuple[str, bool]] = []
+    # blocks: (text, needs_shift, triggers_next)
+    #   triggers_next=True: 送り仮名なしの漢字ブロック ({text} のみ)。
+    #   直後のひらがな先頭文字を大文字にする — AquaSKK では Shift+子音が
+    #   漢字変換を確定しつつ次の文字入力を始めるため。
+    blocks: list[tuple[str, bool, bool]] = []
     i = 0
     while i < len(reading):
         if reading[i] == "{":
             close = reading.find("}", i + 1)
             if close == -1:
-                blocks.append((reading[i + 1:], False))
+                blocks.append((reading[i + 1:], False, False))
                 break
             inner = reading[i + 1:close]
             if "|" in inner:
                 kanji_part, okuri_part = inner.split("|", 1)
-                blocks.append((kanji_part, True))
-                blocks.append((okuri_part, True))
+                blocks.append((kanji_part, True, False))   # 読み部 (送り仮名で完結しない)
+                blocks.append((okuri_part, True, False))   # 送り仮名 (次を大文字化しない)
             else:
-                blocks.append((inner, True))
+                blocks.append((inner, True, True))          # 単純漢字ブロック → 次を大文字化
             i = close + 1
         elif reading[i] == "[":
             # カタカナ語: [よみ] → 先頭大文字(Shift) + 読み + [ (カタカナ変換)
             close = reading.find("]", i + 1)
             if close == -1:
-                blocks.append((reading[i + 1:], True))
+                blocks.append((reading[i + 1:], True, False))
                 break
-            blocks.append((reading[i + 1:close], True))
-            blocks.append((_KATA, False))   # カタカナ変換トリガー
+            blocks.append((reading[i + 1:close], True, False))
+            blocks.append((_KATA, False, False))   # カタカナ変換トリガー
             i = close + 1
         else:
             j_brace   = reading.find("{", i)
@@ -264,20 +268,28 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
                 j = min(j_brace, j_bracket)
             chunk = reading[i:] if j == -1 else reading[i:j]
             if chunk:
-                blocks.append((chunk, False))
+                blocks.append((chunk, False, False))
             i = len(reading) if j == -1 else j
 
     # (kana, stroke, in_kanji_block) — in_kanji_block はShift許容の判定に使う
     result: list[tuple[str, str, bool]] = []
-    for text, needs_shift in blocks:
+    prev_triggers = False  # 前のブロックが triggers_next=True だったか
+    for text, needs_shift, triggers_next in blocks:
         if text == _KATA:
             result.append(("", "[", False))   # カタカナ変換トリガーキー
+            prev_triggers = False
             continue
+        # 漢字ブロック直後のひらがな先頭文字を大文字化
+        # (AquaSKK では Shift+子音が漢字変換確定と次文字入力を兼ねる)
+        capitalize_first = needs_shift or (not needs_shift and prev_triggers)
         segs = kana_to_azik_segmented(text)
         for k, (kana, stroke) in enumerate(segs):
-            if needs_shift and k == 0 and stroke and stroke[0].isalpha():
+            if capitalize_first and k == 0 and stroke and stroke[0].isalpha():
                 stroke = stroke[0].upper() + stroke[1:]
-            result.append((kana, stroke, needs_shift))
+                result.append((kana, stroke, True))   # in_kanji=True: Shift許容
+            else:
+                result.append((kana, stroke, needs_shift))
+        prev_triggers = triggers_next
     return result
 
 
