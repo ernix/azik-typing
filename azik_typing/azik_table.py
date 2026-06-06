@@ -273,23 +273,17 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
 
     # (kana, stroke, in_kanji_block) — in_kanji_block はShift許容の判定に使う
     result: list[tuple[str, str, bool]] = []
-    prev_triggers = False  # 前のブロックが triggers_next=True だったか
     for text, needs_shift, triggers_next in blocks:
         if text == _KATA:
             result.append(("", "[", False))   # カタカナ変換トリガーキー
-            prev_triggers = False
             continue
-        # 漢字ブロック直後のひらがな先頭文字を大文字化
-        # (AquaSKK では Shift+子音が漢字変換確定と次文字入力を兼ねる)
-        capitalize_first = needs_shift or (not needs_shift and prev_triggers)
         segs = kana_to_azik_segmented(text)
         for k, (kana, stroke) in enumerate(segs):
-            if capitalize_first and k == 0 and stroke and stroke[0].isalpha():
+            if needs_shift and k == 0 and stroke and stroke[0].isalpha():
                 stroke = stroke[0].upper() + stroke[1:]
-                result.append((kana, stroke, True))   # in_kanji=True: Shift許容
-            else:
-                result.append((kana, stroke, needs_shift))
-        prev_triggers = triggers_next
+            result.append((kana, stroke, needs_shift))
+        if triggers_next:
+            result.append(("", " ", False))   # SKK変換確定スペース
     return result
 
 
