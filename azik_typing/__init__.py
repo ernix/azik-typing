@@ -1,0 +1,1 @@
+"""AZIK typing practice tool."""
