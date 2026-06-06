@@ -225,6 +225,9 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
       "{おお|き}な"                   -> OpKina
       "{か|い}た"                     -> KqIta   (書いた)
     """
+    # _KATA: カタカナ変換トリガー '[' を追加するための sentinel
+    _KATA = "\x00["
+
     blocks: list[tuple[str, bool]] = []
     i = 0
     while i < len(reading):
@@ -241,8 +244,24 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
             else:
                 blocks.append((inner, True))
             i = close + 1
+        elif reading[i] == "[":
+            # カタカナ語: [よみ] → 先頭大文字(Shift) + 読み + [ (カタカナ変換)
+            close = reading.find("]", i + 1)
+            if close == -1:
+                blocks.append((reading[i + 1:], True))
+                break
+            blocks.append((reading[i + 1:close], True))
+            blocks.append((_KATA, False))   # カタカナ変換トリガー
+            i = close + 1
         else:
-            j = reading.find("{", i)
+            j_brace   = reading.find("{", i)
+            j_bracket = reading.find("[", i)
+            if j_brace == -1:
+                j = j_bracket
+            elif j_bracket == -1:
+                j = j_brace
+            else:
+                j = min(j_brace, j_bracket)
             chunk = reading[i:] if j == -1 else reading[i:j]
             if chunk:
                 blocks.append((chunk, False))
@@ -251,6 +270,9 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
     # (kana, stroke, in_kanji_block) — in_kanji_block はShift許容の判定に使う
     result: list[tuple[str, str, bool]] = []
     for text, needs_shift in blocks:
+        if text == _KATA:
+            result.append(("", "[", False))   # カタカナ変換トリガーキー
+            continue
         segs = kana_to_azik_segmented(text)
         for k, (kana, stroke) in enumerate(segs):
             if needs_shift and k == 0 and stroke and stroke[0].isalpha():
