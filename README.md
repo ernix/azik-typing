@@ -2,6 +2,10 @@
 
 コンソールで動くSKK/AZIKタイピング練習ツールです。
 
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2 of the License.
+
+AZIKストロークの定義は [skk-azik.el](http://openlab.ring.gr.jp/skk/skk/main/skk-azik.el)（Copyright (C) 2002 ONODA Arata, GPLv2, SKK Development Team）を参照しています。
+
 ## インストール
 
 ```bash
