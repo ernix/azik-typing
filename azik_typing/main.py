@@ -98,6 +98,7 @@ def run_typing(
                   for k, s, ik in raw_segs]
         seg_idx = 0
         pos_in_seg = 0
+        in_miss = False  # ミス直後フラグ: 正解が来るまで追加ミスをカウントしない
 
         while seg_idx < len(states):
             h, w = stdscr.getmaxyx()
@@ -157,7 +158,8 @@ def run_typing(
                 )
 
             if _matches(char, expected):
-                # 正解: 次の文字へ
+                # 正解: 次の文字へ（ミス状態も解除）
+                in_miss = False
                 pos_in_seg += 1
                 if pos_in_seg == len(seg.active):
                     seg.done = True
@@ -176,6 +178,7 @@ def run_typing(
 
                 if matched is not None:
                     # バリアントに切替え: 表示を更新して処理継続
+                    in_miss = False
                     seg.active = matched
                     pos_in_seg = len(typed_so_far)
                     if pos_in_seg == len(seg.active):
@@ -183,10 +186,12 @@ def run_typing(
                         seg_idx += 1
                         pos_in_seg = 0
                 else:
-                    # ミスタイプ: primaryストロークに対して記録
+                    # ミスタイプ: 最初の1回だけ記録（連打は無視）
                     curses.beep()
-                    miss_counts[seg.primary] += 1
-                    total_misses += 1
+                    if not in_miss:
+                        miss_counts[seg.primary] += 1
+                        total_misses += 1
+                        in_miss = True
 
         # 例文クリア
         cleared += 1
