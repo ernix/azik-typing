@@ -238,6 +238,19 @@ def set_long_vowel(char: str) -> None:
     AZIK_TRIE = build_trie(KANA_TO_AZIK)
 
 
+# っ 送り仮名トリガーキー
+# US配列: Shift+; = :  / JIS配列: Shift+; = +
+_OKURI_TSU: str = ":"
+
+
+def set_okuri_tsu(char: str) -> None:
+    """っ が送り仮名変換トリガーとして使われる際のストロークを設定する。
+    US配列デフォルト: :  (Shift+;)  / JIS配列: +  (Shift+;)
+    """
+    global _OKURI_TSU
+    _OKURI_TSU = char
+
+
 def kana_to_azik(text: str) -> str:
     """Convert hiragana text to AZIK stroke sequence."""
     return "".join(s for _, s in kana_to_azik_segmented(text))
@@ -338,8 +351,8 @@ def reading_to_strokes(reading: str) -> list[tuple[str, str]]:
                 if stroke and stroke[0].isalpha():
                     stroke = stroke[0].upper() + stroke[1:]
                 elif stroke == ";":
-                    # っ が送り仮名変換トリガーの場合: Shift+; = : (US配列)
-                    stroke = ":"
+                    # っ が送り仮名変換トリガーの場合: Shift+; (US=:, JIS=+)
+                    stroke = _OKURI_TSU
             result.append((kana, stroke, needs_shift))
         if triggers_next:
             result.append(("", " ", False))   # SKK変換確定スペース

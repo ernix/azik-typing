@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .azik_table import get_variants, reading_to_strokes, set_long_vowel
+from .azik_table import get_variants, reading_to_strokes, set_long_vowel, set_okuri_tsu
 
 
 @dataclass
@@ -239,7 +239,8 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     if args.jis:
-        set_long_vowel(":")
+        set_long_vowel(":")   # ー → :  (JIS配列)
+        set_okuri_tsu("+")    # っ送り仮名 → +  (JIS配列: Shift+; = +)
 
     sentences_path = args.sentences or find_default_sentences()
     sentences = load_sentences(sentences_path)
